@@ -45,6 +45,7 @@ public class FormAutoBackup extends JFrame {
 
     public FormAutoBackup() {
         super();
+        super.setTitle("AutoBackup");
         super.setDefaultCloseOperation(EXIT_ON_CLOSE);
         super.setLocationRelativeTo(null);
         super.setSize(700, 200);
