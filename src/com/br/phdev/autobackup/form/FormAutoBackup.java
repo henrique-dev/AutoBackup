@@ -36,63 +36,66 @@ import javax.swing.JTextField;
  * @author Paulo Henrique Gonçalves Bacelar
  */
 public class FormAutoBackup extends JFrame {
-    
+
     private AutoBackup autoBackup;
-    
+
     private JTextField text_path;
     private JComboBox box_interval;
     private JButton button_start;
-    
+
     public FormAutoBackup() {
         super();
         super.setDefaultCloseOperation(EXIT_ON_CLOSE);
         super.setLocationRelativeTo(null);
-        super.setSize(700, 200);                
-        
+        super.setSize(700, 200);
+
         JPanel listPanel = new JPanel();
         listPanel.setLayout(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
-        
+
         JLabel label_path = new JLabel("Insira o local a ser salvo: ");
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 0;
         c.gridx = 0;
         c.gridy = 0;
         listPanel.add(label_path, c);
-                        
+
         this.text_path = new JTextField();
         this.text_path.setSize(500, 0);
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
         c.gridx = 1;
         c.gridy = 0;
-        listPanel.add(this.text_path, c);    
-        
+        listPanel.add(this.text_path, c);
+
         JLabel label_interval = new JLabel("Insira o intervalo entre backups: ");
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 0;
         c.gridx = 0;
         c.gridy = 1;
         listPanel.add(label_interval, c);
-        
+
         this.box_interval = new JComboBox(new String[]{"1 min", "2 min", "5 min"});
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
         c.gridx = 1;
         c.gridy = 1;
         listPanel.add(this.box_interval, c);
-        
+
         this.button_start = new JButton("Começar");
         this.button_start.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                try {
-                    String path = text_path.getText().trim();
-                    autoBackup = new AutoBackup(path);
-                    List<IArchive> list = autoBackup.openFile(path);
-                    autoBackup.writeFiles(path + "\\BACKUP", list);                    
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(null, ex.getMessage());
+                switch (box_interval.getSelectedIndex()) {
+                    case 0: 
+                        new Timer(60).start();
+                        break;
+                    case 1:
+                        new Timer(120).start();
+                        break;
+                    case 2:
+                        new Timer(300).start();
+                        break;
                 }
             }
         });
@@ -103,23 +106,51 @@ public class FormAutoBackup extends JFrame {
         c.gridx = 0;
         c.gridy = 2;
         listPanel.add(this.button_start, c);
-        
-        add(listPanel);                
-        
-        setVisible(true);
+
+        add(listPanel);
+
+        setVisible(true);        
     }
-    
+
+    private void performBackup() {
+        try {
+            String path = text_path.getText().trim();
+            autoBackup = new AutoBackup(path);
+            List<IArchive> list = autoBackup.openFile(path);
+            autoBackup.writeFiles(path + "\\BACKUP", list);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage());
+        }
+    }
+
     public static void main(String[] args) {
         new FormAutoBackup();
     }
-    
+
     private class Timer extends Thread {
+
+        private long startTime;
+        private long timeReached;
+        private long backupTime;
         
+        public Timer(long backupTime) {
+            this.backupTime = backupTime;
+        }
+
         @Override
         public void run() {
-            
+            startTime = System.nanoTime();
+
+            while (true) {
+                long currentTime = (System.nanoTime() - startTime) / 1000000000;
+                if (currentTime > backupTime) {
+                    performBackup();
+                    startTime = System.nanoTime();
+                }
+                System.out.println(currentTime);
+            }
         }
-        
+
     }
-    
+
 }
