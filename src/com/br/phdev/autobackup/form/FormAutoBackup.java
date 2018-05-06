@@ -20,8 +20,10 @@ import com.br.phdev.autobackup.AutoBackup;
 import com.br.phdev.autobackup.IArchive;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -42,19 +44,22 @@ public class FormAutoBackup extends JFrame {
     private JTextField text_path;
     private JComboBox box_interval;
     private JButton button_start;
+    private JButton button_stop;
+    
+    private Timer timerToBackup;
 
     public FormAutoBackup() {
         super();
         super.setTitle("AutoBackup");
-        super.setDefaultCloseOperation(EXIT_ON_CLOSE);
-        super.setLocationRelativeTo(null);
-        super.setSize(700, 200);
+        super.setDefaultCloseOperation(EXIT_ON_CLOSE);        
+        super.setSize(500, 200);
 
         JPanel listPanel = new JPanel();
         listPanel.setLayout(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(5, 5, 5, 5);
 
-        JLabel label_path = new JLabel("Insira o local a ser salvo: ");
+        JLabel label_path = new JLabel("Local: ");
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 0;
         c.gridx = 0;
@@ -69,7 +74,7 @@ public class FormAutoBackup extends JFrame {
         c.gridy = 0;
         listPanel.add(this.text_path, c);
 
-        JLabel label_interval = new JLabel("Insira o intervalo entre backups: ");
+        JLabel label_interval = new JLabel("Intervalo: ");
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 0;
         c.gridx = 0;
@@ -86,30 +91,74 @@ public class FormAutoBackup extends JFrame {
         this.button_start = new JButton("Começar");
         this.button_start.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                switch (box_interval.getSelectedIndex()) {
-                    case 0: 
-                        new Timer(60).start();
-                        break;
-                    case 1:
-                        new Timer(120).start();
-                        break;
-                    case 2:
-                        new Timer(300).start();
-                        break;
-                }
+            public void actionPerformed(ActionEvent e) {                
+                File file = new File(text_path.getText());
+                if (!file.exists()) {
+                    JOptionPane.showMessageDialog(listPanel, "O caminho inserido não existe!");
+                } else {                    
+                    switch (box_interval.getSelectedIndex()) {
+                        case 0: 
+                            timerToBackup = new Timer(60);                                                    
+                            break;
+                        case 1:
+                            timerToBackup = new Timer(120);
+                            break;
+                        case 2:
+                            timerToBackup = new Timer(300);
+                            break;
+                    }
+                    timerToBackup.setRunning(true);
+                    timerToBackup.start();
+                    button_start.setEnabled(false);
+                    text_path.setEditable(false);
+                    text_path.setEnabled(false);
+                    box_interval.setEnabled(false);
+                    button_stop.setEnabled(true);                    
+                }                                
             }
         });
         c.fill = GridBagConstraints.HORIZONTAL;
-        c.ipady = 40;
+        //c.ipady = 40;
+        c.ipadx = 50;        
+        c.insets = new Insets(10, 10, 0, 10);
         c.weightx = 1;
         c.gridwidth = 2;
         c.gridx = 0;
         c.gridy = 2;
         listPanel.add(this.button_start, c);
+        
+        this.button_stop = new JButton("Parar");
+        this.button_stop.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                timerToBackup.setRunning(false);
+                try {
+                    timerToBackup.join();
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                } finally {
+                    timerToBackup = null;
+                    button_start.setEnabled(true);
+                    text_path.setEditable(true);
+                    text_path.setEnabled(true);
+                    box_interval.setEnabled(true);
+                    button_stop.setEnabled(false);
+                }
+            }
+        });
+        this.button_stop.setEnabled(false);
+        c.fill = GridBagConstraints.HORIZONTAL;
+        //c.ipady = 40;
+        c.ipadx = 50;
+        c.weightx = 1;
+        c.gridwidth = 3;
+        c.gridx = 0;
+        c.gridy = 3;
+        listPanel.add(this.button_stop, c);
 
         add(listPanel);
 
+        super.setLocationRelativeTo(null);
         setVisible(true);        
     }
 
@@ -130,9 +179,10 @@ public class FormAutoBackup extends JFrame {
 
     private class Timer extends Thread {
 
-        private long startTime;
-        private long timeReached;
-        private long backupTime;
+        private long startTime;        
+        private final long backupTime;
+        
+        private boolean running;
         
         public Timer(long backupTime) {
             this.backupTime = backupTime;
@@ -142,15 +192,23 @@ public class FormAutoBackup extends JFrame {
         public void run() {
             startTime = System.nanoTime();
 
-            while (true) {
+            while (this.running) {
                 long currentTime = (System.nanoTime() - startTime) / 1000000000;
                 if (currentTime > backupTime) {
                     performBackup();
                     startTime = System.nanoTime();
                 }
-                System.out.println(currentTime);
+                //System.out.println(currentTime);
             }
         }
+
+        public boolean isRunning() {
+            return running;
+        }
+
+        public void setRunning(boolean running) {
+            this.running = running;
+        }                  
 
     }
 
