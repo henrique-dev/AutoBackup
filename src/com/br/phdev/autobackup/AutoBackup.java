@@ -95,11 +95,16 @@ public class AutoBackup{
                     fos.write(archive.getBytes());
                     fos.flush();
                 }                
-            }
-            if (fos != null)
-                fos.close();
+            }            
         } catch (IOException e) {
-            e.printStackTrace();
+            e.printStackTrace();            
+        } finally {
+            try {
+                if (fos != null)
+                fos.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
         //System.out.println(arquivos.size());
     }
@@ -107,7 +112,7 @@ public class AutoBackup{
     private byte[] getBytesFromFile(File file) {
         byte[] bytes = new byte[(int)file.length()];
         try (FileInputStream fis = new FileInputStream(file)) {
-            fis.read(bytes);
+            fis.read(bytes);            
         } catch (IOException e) {
             e.printStackTrace();
         }
